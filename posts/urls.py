@@ -18,5 +18,6 @@ urlpatterns = [
     path('editorposts/top3/', EditorPostViewSet.as_view({'get': 'top3'}), name='editorpost-top3'),
     path('editorposts/<int:pk>/update/', EditorPostViewSet.as_view({'put': 'update_post'}), name='editor-post-update'),
     path('editorposts/<int:pk>/delete/', EditorPostViewSet.as_view({'delete': 'delete_post'}), name='editor-post-delete'),
+    path('editorposts/<int:pk>/like/', EditorPostViewSet.as_view({'post': 'like'}), name='editorpost-like')
 ]
     

@@ -88,11 +88,11 @@ class EditorPostSerializer(serializers.ModelSerializer):
     due_status = serializers.SerializerMethodField()
     # editorauthor = serializers.SerializerMethodField()
     user_ID = serializers.CharField(source='editor_author.user.id', read_only=True)
-    
+    like_cnt = serializers.IntegerField()
     class Meta:
         model = Post
-        fields = ('title', 'content', 'editor_author', 'likes', 'image', 'published_date', 'due_date', 'event_date','due_status','user_ID','editor_address')
-        read_only_fields = ('likes', 'published_date', 'editor_author', 'due_status')
+        fields = ('title', 'content', 'editor_author', 'image', 'published_date', 'due_date', 'event_date','due_status','user_ID','editor_address','like_cnt')
+        read_only_fields = ('user_ID','published_date', 'editor_author', 'due_status', 'like_cnt')
 
     def create(self, validated_data):
         user = self.context['request'].user
