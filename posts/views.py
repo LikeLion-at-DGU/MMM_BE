@@ -8,13 +8,14 @@ from user.models import User, EditorProfile
 from .models import Post, TTSAudioTitle, TTSAudio, Like
 from .serializers import PostSerializer, EditorPostSerializer
 from .paginations import PostPagination
-
+ 
 #tts 관련
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 
+from django.db.models import Count, Q
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -22,10 +23,13 @@ class PostViewSet(viewsets.ModelViewSet):
     permission_classes = []
     
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    # filterset_fields = ["author"] # 이름으로 게시물 모아보기
     search_fields = ["author"]
-    ordering_fields = ["published_date"] #최신 순 정렬
+    ordering_fields = ["published_date"]
     pagination_class = PostPagination
+    
+    def get_queryset(self):
+        # tts null 제와
+        return self.queryset.exclude(tts_audio__isnull=True, tts_title_audio__isnull=True)
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -110,7 +114,8 @@ class PostViewSet(viewsets.ModelViewSet):
 
 
 class EditorPostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all()
+    queryset = Post.objects.annotate(like_cnt=Count('likes'))
+    
     serializer_class = EditorPostSerializer
     permission_classes = []
 
@@ -122,19 +127,21 @@ class EditorPostViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
     
-    @action(detail=True, methods=['POST'])
-    def like(self, request, pk=None):
-        post = self.get_object()
-        user = request.user
-
-        try:
-            like = Like.objects.get(user=user, post=post)
-            like.delete()
-            return Response({'message': '좋아요 취소됨'})
-        except Like.DoesNotExist:
-            Like.objects.create(user=user, post=post)
-            return Response({'message': '좋아요 추가됨'})
+    # @action(detail=True, methods=['POST'])
+    # def like(self, request, pk=None):
+    #     post = self.get_object()
+    #     user = request.user
+    #     # likes = Like.objects.filter(user=user, post=post)
+    #     try:
+    #         likes = Like.objects.get(user=user, post=post)
+    #         likes.delete()
+    #         return Response({'message': '좋아요 취소됨'})
+    #     except Like.DoesNotExist:
+    #         Like.objects.create(user=user, post=post)
+    #         return Response({'message': '좋아요 추가됨'})
     
+
+
     @action(detail=False, methods=['GET'])
     def top3(self, request):
         queryset = self.get_queryset().annotate(like_count=Count('likes')).order_by('-like_count')[:3]
